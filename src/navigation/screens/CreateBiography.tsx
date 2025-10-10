@@ -7,15 +7,22 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useBiographyViewModel } from '../../hooks/useBiographyViewModel';
 import { TimelineEvent } from '../../models/Biography';
 
+type RootStackParamList = {
+  HomeTabs: undefined;
+  BiographyDetails: { biographyId: string };
+  CreateBiography: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function CreateBiography() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const viewModel = useBiographyViewModel();
   
   const [name, setName] = useState('');
@@ -72,7 +79,7 @@ export default function CreateBiography() {
   };
 
   const handleSubmit = async () => {
-    console.log('🚀 BOTÓN PRESIONADO - handleSubmit iniciado');
+    console.log('🚀 handleSubmit iniciado');
     
     if (isSubmitting) {
       console.log('⚠️ Ya hay un submit en proceso');
@@ -123,36 +130,31 @@ export default function CreateBiography() {
       timeline: validTimeline.sort((a, b) => parseInt(a.year) - parseInt(b.year)),
     };
 
-    console.log('📦 Datos a enviar:', biographyData);
+    console.log('📦 Datos a enviar:', JSON.stringify(biographyData, null, 2));
 
     try {
-      console.log('⏳ Llamando a createBiography...');
+      console.log('⏳ Llamando a viewModel.createBiography...');
       const success = await viewModel.createBiography(biographyData);
-      console.log('📊 Resultado:', success);
-
-      setIsSubmitting(false);
+      console.log('📊 Resultado de createBiography:', success);
 
       if (success) {
-        console.log('✅ Éxito - mostrando alert');
-        Alert.alert(
-          'Éxito',
-          'Biografía creada correctamente',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                console.log('🔄 Navegando...');
-                navigation.goBack();
-              },
-            },
-          ]
-        );
+        console.log('✅ Biografía creada exitosamente');
+        setIsSubmitting(false);
+        
+        // Cerrar el modal
+        navigation.goBack();
+        
+        // Mostrar confirmación
+        setTimeout(() => {
+          Alert.alert('Éxito', 'Biografía creada correctamente');
+        }, 100);
       } else {
-        console.log('❌ Falló createBiography');
+        console.log('❌ createBiography retornó false');
+        setIsSubmitting(false);
         Alert.alert('Error', 'No se pudo crear la biografía. Intenta de nuevo.');
       }
     } catch (error) {
-      console.error('💥 Error:', error);
+      console.error('💥 Error capturado:', error);
       setIsSubmitting(false);
       Alert.alert('Error', 'Ocurrió un error al crear la biografía.');
     }
@@ -188,6 +190,7 @@ export default function CreateBiography() {
             placeholder="Ej: Isaac Newton"
             value={name}
             onChangeText={setName}
+            editable={!isSubmitting}
           />
 
           <Text style={styles.label}>Profesión *</Text>
@@ -196,6 +199,7 @@ export default function CreateBiography() {
             placeholder="Ej: Físico y Matemático"
             value={profession}
             onChangeText={setProfession}
+            editable={!isSubmitting}
           />
 
           <Text style={styles.label}>Fecha de Nacimiento * (YYYY-MM-DD)</Text>
@@ -204,6 +208,7 @@ export default function CreateBiography() {
             placeholder="1643-01-04"
             value={birthDate}
             onChangeText={setBirthDate}
+            editable={!isSubmitting}
           />
 
           <Text style={styles.label}>Fecha de Fallecimiento (YYYY-MM-DD)</Text>
@@ -212,6 +217,7 @@ export default function CreateBiography() {
             placeholder="1727-03-31 (opcional)"
             value={deathDate}
             onChangeText={setDeathDate}
+            editable={!isSubmitting}
           />
 
           <Text style={styles.label}>URL de Imagen (opcional)</Text>
@@ -220,6 +226,7 @@ export default function CreateBiography() {
             placeholder="https://ejemplo.com/imagen.jpg"
             value={imageUrl}
             onChangeText={setImageUrl}
+            editable={!isSubmitting}
           />
         </View>
 
@@ -233,6 +240,7 @@ export default function CreateBiography() {
             onChangeText={setSummary}
             multiline
             numberOfLines={4}
+            editable={!isSubmitting}
           />
         </View>
 
@@ -240,7 +248,11 @@ export default function CreateBiography() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Logros Principales *</Text>
-            <TouchableOpacity onPress={addAchievement} style={styles.addButton}>
+            <TouchableOpacity 
+              onPress={addAchievement} 
+              style={styles.addButton}
+              disabled={isSubmitting}
+            >
               <Text style={styles.addButtonText}>+ Agregar</Text>
             </TouchableOpacity>
           </View>
@@ -253,11 +265,13 @@ export default function CreateBiography() {
                 value={achievement}
                 onChangeText={(value) => updateAchievement(index, value)}
                 multiline
+                editable={!isSubmitting}
               />
               {achievements.length > 1 && (
                 <TouchableOpacity
                   onPress={() => removeAchievement(index)}
                   style={styles.removeButton}
+                  disabled={isSubmitting}
                 >
                   <Text style={styles.removeButtonText}>✕</Text>
                 </TouchableOpacity>
@@ -270,7 +284,11 @@ export default function CreateBiography() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Línea de Tiempo *</Text>
-            <TouchableOpacity onPress={addTimelineEvent} style={styles.addButton}>
+            <TouchableOpacity 
+              onPress={addTimelineEvent} 
+              style={styles.addButton}
+              disabled={isSubmitting}
+            >
               <Text style={styles.addButtonText}>+ Agregar</Text>
             </TouchableOpacity>
           </View>
@@ -284,11 +302,13 @@ export default function CreateBiography() {
                   value={item.year}
                   onChangeText={(value) => updateTimelineEvent(item.id, 'year', value)}
                   keyboardType="numeric"
+                  editable={!isSubmitting}
                 />
                 {timeline.length > 1 && (
                   <TouchableOpacity
                     onPress={() => removeTimelineEvent(item.id)}
                     style={styles.removeButton}
+                    disabled={isSubmitting}
                   >
                     <Text style={styles.removeButtonText}>✕</Text>
                   </TouchableOpacity>
@@ -300,6 +320,7 @@ export default function CreateBiography() {
                 value={item.event}
                 onChangeText={(value) => updateTimelineEvent(item.id, 'event', value)}
                 multiline
+                editable={!isSubmitting}
               />
             </View>
           ))}
@@ -313,12 +334,13 @@ export default function CreateBiography() {
         <TouchableOpacity
           style={[styles.button, styles.cancelButton]}
           onPress={() => navigation.goBack()}
+          disabled={isSubmitting}
         >
           <Text style={styles.cancelButtonText}>Cancelar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, styles.submitButton]}
+          style={[styles.button, styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={isSubmitting}
         >
@@ -487,6 +509,10 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#007AFF',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+    opacity: 0.6,
   },
   submitButtonText: {
     color: '#FFF',

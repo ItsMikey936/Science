@@ -102,48 +102,54 @@ export class BiographyViewModel {
   }
 
   // Comandos (Actions)
-  async loadBiographies() {
+  async loadBiographies(): Promise<void> {
+    console.log('📥 loadBiographies iniciado');
     this.setLoading(true);
     this.setError(null);
     
     try {
       const biographies = await BiographyService.getAllBiographies();
+      console.log('✅ Biografías cargadas:', biographies.length);
       this.setBiographies(biographies);
     } catch (error) {
+      console.error('❌ Error en loadBiographies:', error);
       this.setError('Error al cargar las biografías');
-      console.error(error);
     } finally {
       this.setLoading(false);
     }
   }
 
   async getBiographyById(id: string): Promise<Biography | null> {
-    this.setLoading(true);
-    this.setError(null);
+    console.log('🔍 getBiographyById:', id);
     
     try {
       const biography = await BiographyService.getBiographyById(id);
+      console.log('✅ Biografía encontrada:', biography?.name);
       return biography;
     } catch (error) {
+      console.error('❌ Error en getBiographyById:', error);
       this.setError('Error al obtener la biografía');
-      console.error(error);
       return null;
-    } finally {
-      this.setLoading(false);
     }
   }
 
   async createBiography(data: CreateBiographyDTO): Promise<boolean> {
+    console.log('➕ createBiography iniciado con datos:', data);
     this.setLoading(true);
     this.setError(null);
     
     try {
-      await BiographyService.createBiography(data);
-      await this.loadBiographies(); // Recargar la lista
+      const newBio = await BiographyService.createBiography(data);
+      console.log('✅ Biografía creada:', newBio.id, newBio.name);
+      
+      // Recargar biografías
+      await this.loadBiographies();
+      console.log('✅ Lista recargada, total:', this._biographies.length);
+      
       return true;
     } catch (error) {
+      console.error('❌ Error en createBiography:', error);
       this.setError('Error al crear la biografía');
-      console.error(error);
       return false;
     } finally {
       this.setLoading(false);
@@ -151,19 +157,22 @@ export class BiographyViewModel {
   }
 
   async updateBiography(id: string, data: Partial<CreateBiographyDTO>): Promise<boolean> {
+    console.log('✏️ updateBiography:', id);
     this.setLoading(true);
     this.setError(null);
     
     try {
       const updated = await BiographyService.updateBiography(id, data);
       if (updated) {
+        console.log('✅ Biografía actualizada');
         await this.loadBiographies();
         return true;
       }
+      console.log('❌ No se pudo actualizar');
       return false;
     } catch (error) {
+      console.error('❌ Error en updateBiography:', error);
       this.setError('Error al actualizar la biografía');
-      console.error(error);
       return false;
     } finally {
       this.setLoading(false);
@@ -171,18 +180,26 @@ export class BiographyViewModel {
   }
 
   async deleteBiography(id: string): Promise<boolean> {
+    console.log('🗑️ deleteBiography iniciado:', id);
     this.setLoading(true);
     this.setError(null);
     
     try {
       const success = await BiographyService.deleteBiography(id);
+      console.log('🗑️ Resultado de BiographyService.deleteBiography:', success);
+      
       if (success) {
+        console.log('✅ Eliminación exitosa, recargando lista...');
         await this.loadBiographies();
+        console.log('✅ Lista recargada, biografías actuales:', this._biographies.length);
+        return true;
       }
-      return success;
+      
+      console.log('❌ No se pudo eliminar');
+      return false;
     } catch (error) {
+      console.error('❌ Error en deleteBiography:', error);
       this.setError('Error al eliminar la biografía');
-      console.error(error);
       return false;
     } finally {
       this.setLoading(false);
@@ -206,19 +223,25 @@ export class BiographyViewModel {
   }
 
   async toggleFavorite(id: string): Promise<boolean> {
+    console.log('❤️ toggleFavorite:', id);
+    
     try {
       const biography = this._biographies.find(b => b.id === id);
-      if (!biography) return false;
+      if (!biography) {
+        console.log('❌ Biografía no encontrada');
+        return false;
+      }
 
       const updatedBiographies = this._biographies.map(b =>
-        b.id === id ? { ...b, isFavorite: !b.isFavorite } : b
+        b.id === id ? { ...b, isFavorite: !b.isFavorite, updatedAt: new Date().toISOString() } : b
       );
       
+      console.log('✅ Favorito actualizado');
       this.setBiographies(updatedBiographies);
       return true;
     } catch (error) {
+      console.error('❌ Error en toggleFavorite:', error);
       this.setError('Error al actualizar favorito');
-      console.error(error);
       return false;
     }
   }

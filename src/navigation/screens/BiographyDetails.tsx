@@ -39,20 +39,24 @@ export default function BiographyDetails({ navigation, route }: Props) {
   const viewModel = useBiographyViewModel();
   const [biography, setBiography] = useState<Biography | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadBiography();
   }, [route.params.biographyId]);
 
   const loadBiography = async () => {
+    console.log('📖 Cargando biografía:', route.params.biographyId);
     setLoading(true);
     const bio = await viewModel.getBiographyById(route.params.biographyId);
+    console.log('📖 Biografía cargada:', bio?.name);
     setBiography(bio);
     setLoading(false);
   };
 
   const handleToggleFavorite = async () => {
     if (biography) {
+      console.log('❤️ Toggle favorito para:', biography.name);
       await viewModel.toggleFavorite(biography.id);
       // Recargar la biografía para actualizar el estado
       await loadBiography();
@@ -60,7 +64,13 @@ export default function BiographyDetails({ navigation, route }: Props) {
   };
 
   const handleDelete = () => {
-    if (!biography) return;
+    if (!biography) {
+      console.log('⚠️ No hay biografía para eliminar');
+      return;
+    }
+
+    console.log('🗑️ Intentando eliminar:', biography.name);
+    console.log('🗑️ isUserCreated:', biography.isUserCreated);
 
     if (!biography.isUserCreated) {
       Alert.alert('Error', 'No puedes eliminar biografías predeterminadas');
@@ -71,21 +81,42 @@ export default function BiographyDetails({ navigation, route }: Props) {
       'Eliminar Biografía',
       `¿Estás seguro de eliminar la biografía de ${biography.name}?`,
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Cancelar', 
+          style: 'cancel',
+          onPress: () => console.log('❌ Eliminación cancelada')
+        },
         {
           text: 'Eliminar',
           style: 'destructive',
           onPress: async () => {
-            const success = await viewModel.deleteBiography(biography.id);
-            if (success) {
-              Alert.alert('Éxito', 'Biografía eliminada correctamente', [
-                {
-                  text: 'OK',
-                  onPress: () => navigation.navigate('HomeTabs'),
-                },
-              ]);
-            } else {
-              Alert.alert('Error', 'No se pudo eliminar la biografía');
+            console.log('🗑️ Confirmado - Eliminando biografía...');
+            setDeleting(true);
+            
+            try {
+              const success = await viewModel.deleteBiography(biography.id);
+              console.log('🗑️ Resultado de eliminación:', success);
+              
+              setDeleting(false);
+              
+              if (success) {
+                console.log('✅ Biografía eliminada exitosamente');
+                
+                // Navegar primero
+                navigation.navigate('HomeTabs');
+                
+                // Mostrar alert después
+                setTimeout(() => {
+                  Alert.alert('Éxito', 'Biografía eliminada correctamente');
+                }, 300);
+              } else {
+                console.log('❌ No se pudo eliminar la biografía');
+                Alert.alert('Error', 'No se pudo eliminar la biografía');
+              }
+            } catch (error) {
+              console.error('💥 Error al eliminar:', error);
+              setDeleting(false);
+              Alert.alert('Error', 'Ocurrió un error al eliminar la biografía');
             }
           }
         }
@@ -98,6 +129,15 @@ export default function BiographyDetails({ navigation, route }: Props) {
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Cargando biografía...</Text>
+      </View>
+    );
+  }
+
+  if (deleting) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#D32F2F" />
+        <Text style={styles.loadingText}>Eliminando biografía...</Text>
       </View>
     );
   }

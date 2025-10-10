@@ -27,7 +27,8 @@ export class BiographyService {
       ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      isUserCreated: false
+      isUserCreated: false,
+      isFavorite: false
     },
     {
       id: '2',
@@ -49,7 +50,8 @@ export class BiographyService {
       ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      isUserCreated: false
+      isUserCreated: false,
+      isFavorite: false
     },
     {
       id: '3',
@@ -71,58 +73,78 @@ export class BiographyService {
       ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      isUserCreated: false
+      isUserCreated: false,
+      isFavorite: false
     }
   ];
 
   static async getAllBiographies(): Promise<Biography[]> {
     try {
+      console.log('📚 getAllBiographies - Store actual:', biographiesStore.length);
+      
       // Si el almacenamiento está vacío, inicializar con biografías predeterminadas
       if (biographiesStore.length === 0) {
+        console.log('📦 Inicializando con biografías predeterminadas');
         biographiesStore = [...this.defaultBiographies];
       }
-      return biographiesStore;
+      
+      console.log('✅ Retornando', biographiesStore.length, 'biografías');
+      return [...biographiesStore]; // Retornar copia
     } catch (error) {
-      console.error('Error al obtener biografías:', error);
-      return this.defaultBiographies;
+      console.error('❌ Error al obtener biografías:', error);
+      return [...this.defaultBiographies];
     }
   }
 
   static async getBiographyById(id: string): Promise<Biography | null> {
     try {
       const biographies = await this.getAllBiographies();
-      return biographies.find(b => b.id === id) || null;
+      const found = biographies.find(b => b.id === id) || null;
+      console.log('🔍 getBiographyById:', id, found ? '✅ Encontrado' : '❌ No encontrado');
+      return found;
     } catch (error) {
-      console.error('Error al obtener biografía:', error);
+      console.error('❌ Error al obtener biografía:', error);
       return null;
     }
   }
 
   static async createBiography(data: CreateBiographyDTO): Promise<Biography> {
     try {
+      console.log('➕ createBiography - Datos recibidos:', data.name);
+      
       const biographies = await this.getAllBiographies();
+      const newId = `user-${Date.now()}`;
+      
       const newBiography: Biography = {
         ...data,
-        id: Date.now().toString(),
+        id: newId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        isUserCreated: true
+        isUserCreated: true,
+        isFavorite: false
       };
       
+      console.log('✅ Nueva biografía creada con ID:', newId);
       biographiesStore = [...biographies, newBiography];
+      console.log('✅ Store actualizado, total:', biographiesStore.length);
+      
       return newBiography;
     } catch (error) {
-      console.error('Error al crear biografía:', error);
+      console.error('❌ Error al crear biografía:', error);
       throw error;
     }
   }
 
   static async updateBiography(id: string, data: Partial<CreateBiographyDTO>): Promise<Biography | null> {
     try {
+      console.log('✏️ updateBiography:', id);
       const biographies = await this.getAllBiographies();
       const index = biographies.findIndex(b => b.id === id);
       
-      if (index === -1) return null;
+      if (index === -1) {
+        console.log('❌ Biografía no encontrada');
+        return null;
+      }
       
       const updatedBiography = {
         ...biographies[index],
@@ -136,20 +158,42 @@ export class BiographyService {
         ...biographies.slice(index + 1)
       ];
       
+      console.log('✅ Biografía actualizada');
       return updatedBiography;
     } catch (error) {
-      console.error('Error al actualizar biografía:', error);
+      console.error('❌ Error al actualizar biografía:', error);
       return null;
     }
   }
 
   static async deleteBiography(id: string): Promise<boolean> {
     try {
+      console.log('🗑️ deleteBiography - ID:', id);
+      
       const biographies = await this.getAllBiographies();
+      const bioToDelete = biographies.find(b => b.id === id);
+      
+      if (!bioToDelete) {
+        console.log('❌ Biografía no encontrada');
+        return false;
+      }
+      
+      console.log('🔍 Biografía encontrada:', bioToDelete.name);
+      console.log('🔍 isUserCreated:', bioToDelete.isUserCreated);
+      
+      // Solo permitir eliminar biografías creadas por el usuario
+      if (!bioToDelete.isUserCreated) {
+        console.log('⚠️ No se puede eliminar biografía predeterminada');
+        return false;
+      }
+      
+      const lengthBefore = biographiesStore.length;
       biographiesStore = biographies.filter(b => b.id !== id);
+      console.log(`✅ Biografía eliminada. Antes: ${lengthBefore}, Después: ${biographiesStore.length}`);
+      
       return true;
     } catch (error) {
-      console.error('Error al eliminar biografía:', error);
+      console.error('❌ Error al eliminar biografía:', error);
       return false;
     }
   }
@@ -165,13 +209,14 @@ export class BiographyService {
         b.summary.toLowerCase().includes(lowercaseQuery)
       );
     } catch (error) {
-      console.error('Error al buscar biografías:', error);
+      console.error('❌ Error al buscar biografías:', error);
       return [];
     }
   }
 
   // Método adicional para resetear los datos (útil para desarrollo)
   static async resetToDefault(): Promise<void> {
+    console.log('🔄 Reseteando a datos predeterminados');
     biographiesStore = [...this.defaultBiographies];
   }
 }

@@ -61,25 +61,8 @@ export default function Settings() {
         </Text>
       </View>
 
-      {/* Preferencias */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Preferencias</Text>
-        
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Notificaciones</Text>
-            <Text style={styles.settingDescription}>
-              Recibe recordatorios sobre biografías
-            </Text>
-          </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
-          />
-        </View>
 
         
-      </View>
 
       {/* General */}
       <View style={styles.section}>
