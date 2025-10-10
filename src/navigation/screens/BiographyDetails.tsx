@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useBiographyViewModel } from '../../hooks/useBiographyViewModel';
 import { Biography } from '../../models/Biography';
@@ -14,7 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
 type RootStackParamList = {
-  Home: undefined;
+  HomeTabs: undefined;
   BiographyDetails: { biographyId: string };
   CreateBiography: undefined;
 };
@@ -48,6 +49,48 @@ export default function BiographyDetails({ navigation, route }: Props) {
     const bio = await viewModel.getBiographyById(route.params.biographyId);
     setBiography(bio);
     setLoading(false);
+  };
+
+  const handleToggleFavorite = async () => {
+    if (biography) {
+      await viewModel.toggleFavorite(biography.id);
+      // Recargar la biografía para actualizar el estado
+      await loadBiography();
+    }
+  };
+
+  const handleDelete = () => {
+    if (!biography) return;
+
+    if (!biography.isUserCreated) {
+      Alert.alert('Error', 'No puedes eliminar biografías predeterminadas');
+      return;
+    }
+
+    Alert.alert(
+      'Eliminar Biografía',
+      `¿Estás seguro de eliminar la biografía de ${biography.name}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await viewModel.deleteBiography(biography.id);
+            if (success) {
+              Alert.alert('Éxito', 'Biografía eliminada correctamente', [
+                {
+                  text: 'OK',
+                  onPress: () => navigation.navigate('HomeTabs'),
+                },
+              ]);
+            } else {
+              Alert.alert('Error', 'No se pudo eliminar la biografía');
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (loading) {
@@ -93,6 +136,27 @@ export default function BiographyDetails({ navigation, route }: Props) {
           <Text style={styles.heroDates}>
             {biography.birthDate} - {biography.deathDate || 'Presente'}
           </Text>
+        </View>
+
+        {/* Botones de acción en el hero */}
+        <View style={styles.heroActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleToggleFavorite}
+          >
+            <Text style={styles.actionIcon}>
+              {biography.isFavorite ? '❤️' : '🤍'}
+            </Text>
+          </TouchableOpacity>
+
+          {biography.isUserCreated && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={handleDelete}
+            >
+              <Text style={styles.actionIcon}>🗑️</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -224,6 +288,32 @@ const styles = StyleSheet.create({
   heroDates: {
     fontSize: 14,
     color: '#BDBDBD',
+  },
+  heroActions: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  deleteButton: {
+    backgroundColor: 'rgba(255, 245, 245, 0.95)',
+  },
+  actionIcon: {
+    fontSize: 26,
   },
   section: {
     backgroundColor: '#FFF',

@@ -28,6 +28,7 @@ export default function CreateBiography() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>([
     { id: '1', year: '', event: '' }
   ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addAchievement = () => {
     setAchievements([...achievements, '']);
@@ -70,46 +71,46 @@ export default function CreateBiography() {
     }
   };
 
-  const validateForm = (): boolean => {
+  const handleSubmit = async () => {
+    console.log('🚀 BOTÓN PRESIONADO - handleSubmit iniciado');
+    
+    if (isSubmitting) {
+      console.log('⚠️ Ya hay un submit en proceso');
+      return;
+    }
+
+    // Validaciones
     if (!name.trim()) {
       Alert.alert('Error', 'El nombre es obligatorio');
-      return false;
+      return;
     }
     if (!profession.trim()) {
       Alert.alert('Error', 'La profesión es obligatoria');
-      return false;
+      return;
     }
     if (!birthDate.trim()) {
       Alert.alert('Error', 'La fecha de nacimiento es obligatoria');
-      return false;
+      return;
     }
     if (!summary.trim()) {
       Alert.alert('Error', 'El resumen es obligatorio');
-      return false;
+      return;
     }
     
     const validAchievements = achievements.filter(a => a.trim());
     if (validAchievements.length === 0) {
       Alert.alert('Error', 'Debes agregar al menos un logro');
-      return false;
+      return;
     }
 
     const validTimeline = timeline.filter(t => t.year.trim() && t.event.trim());
     if (validTimeline.length === 0) {
       Alert.alert('Error', 'Debes agregar al menos un evento en la línea de tiempo');
-      return false;
+      return;
     }
 
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-
-    const validAchievements = achievements.filter(a => a.trim());
-    const validTimeline = timeline
-      .filter(t => t.year.trim() && t.event.trim())
-      .sort((a, b) => parseInt(a.year) - parseInt(b.year));
+    console.log('✅ Validaciones pasadas');
+    setIsSubmitting(true);
 
     const biographyData = {
       name: name.trim(),
@@ -119,40 +120,64 @@ export default function CreateBiography() {
       imageUrl: imageUrl.trim() || undefined,
       summary: summary.trim(),
       achievements: validAchievements,
-      timeline: validTimeline,
+      timeline: validTimeline.sort((a, b) => parseInt(a.year) - parseInt(b.year)),
     };
 
-    const success = await viewModel.createBiography(biographyData);
+    console.log('📦 Datos a enviar:', biographyData);
 
-    if (success) {
-      Alert.alert(
-        'Éxito',
-        'Biografía creada correctamente',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('HomeTabs'),
-          },
-        ]
-      );
-    } else {
-      Alert.alert('Error', 'No se pudo crear la biografía. Intenta de nuevo.');
+    try {
+      console.log('⏳ Llamando a createBiography...');
+      const success = await viewModel.createBiography(biographyData);
+      console.log('📊 Resultado:', success);
+
+      setIsSubmitting(false);
+
+      if (success) {
+        console.log('✅ Éxito - mostrando alert');
+        Alert.alert(
+          'Éxito',
+          'Biografía creada correctamente',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                console.log('🔄 Navegando...');
+                navigation.goBack();
+              },
+            },
+          ]
+        );
+      } else {
+        console.log('❌ Falló createBiography');
+        Alert.alert('Error', 'No se pudo crear la biografía. Intenta de nuevo.');
+      }
+    } catch (error) {
+      console.error('💥 Error:', error);
+      setIsSubmitting(false);
+      Alert.alert('Error', 'Ocurrió un error al crear la biografía.');
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Nueva Biografía</Text>
-          <Text style={styles.subtitle}>
-            Completa todos los campos para crear una biografía
-          </Text>
-        </View>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.closeButtonText}>✕</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Nueva Biografía</Text>
+        <Text style={styles.subtitle}>
+          Completa todos los campos para crear una biografía
+        </Text>
+      </View>
 
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Información Básica */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información Básica</Text>
@@ -280,29 +305,29 @@ export default function CreateBiography() {
           ))}
         </View>
 
-        {/* Botones */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.cancelButtonText}>Cancelar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.submitButton]}
-            onPress={handleSubmit}
-            disabled={viewModel.loading}
-          >
-            <Text style={styles.submitButtonText}>
-              {viewModel.loading ? 'Guardando...' : 'Crear Biografía'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </KeyboardAvoidingView>
+
+      {/* Botones Fijos en el Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.button, styles.cancelButton]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.cancelButtonText}>Cancelar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.submitButton]}
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? 'Guardando...' : 'Crear Biografía'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -311,16 +336,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
   header: {
     backgroundColor: '#007AFF',
     padding: 20,
     paddingTop: 60,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#FFF',
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 28,
@@ -331,6 +368,12 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#E0E0E0',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   section: {
     backgroundColor: '#FFF',
@@ -417,11 +460,14 @@ const styles = StyleSheet.create({
     minHeight: 60,
     textAlignVertical: 'top',
   },
-  buttonContainer: {
+  footer: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
-    marginTop: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
   },
   button: {
     flex: 1,

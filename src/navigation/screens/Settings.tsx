@@ -78,19 +78,7 @@ export default function Settings() {
           />
         </View>
 
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Modo Oscuro</Text>
-            <Text style={styles.settingDescription}>
-              Próximamente disponible
-            </Text>
-          </View>
-          <Switch
-            value={darkModeEnabled}
-            onValueChange={setDarkModeEnabled}
-            disabled
-          />
-        </View>
+        
       </View>
 
       {/* General */}

@@ -205,6 +205,24 @@ export class BiographyViewModel {
     }
   }
 
+  async toggleFavorite(id: string): Promise<boolean> {
+    try {
+      const biography = this._biographies.find(b => b.id === id);
+      if (!biography) return false;
+
+      const updatedBiographies = this._biographies.map(b =>
+        b.id === id ? { ...b, isFavorite: !b.isFavorite } : b
+      );
+      
+      this.setBiographies(updatedBiographies);
+      return true;
+    } catch (error) {
+      this.setError('Error al actualizar favorito');
+      console.error(error);
+      return false;
+    }
+  }
+
   clearSearch() {
     this.setSearchQuery('');
   }
