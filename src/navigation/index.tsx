@@ -1,25 +1,28 @@
+// src/navigation/index.tsx
+
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HeaderButton, Text } from '@react-navigation/elements';
 import {
   createStaticNavigation,
   StaticParamList,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
-import bell from '../assets/bell.png';
 import newspaper from '../assets/newspaper.png';
-import { Home } from './screens/Home';
-import { Profile } from './screens/Profile';
-import { Settings } from './screens/Settings';
-import { Updates } from './screens/Updates';
-import { NotFound } from './screens/NotFound';
+import Home from './screens/Home';
+import BiographyDetails from './screens/BiographyDetails';
+import CreateBiography from './screens/CreateBiography';
+import Favorites from './screens/Favorites';
+import Statistics from './screens/Stadistics';
+import Settings from './screens/Settings';
+import Help from './screens/Help';
 
+// Definir las tabs principales
 const HomeTabs = createBottomTabNavigator({
   screens: {
     Home: {
       screen: Home,
       options: {
-        title: 'Feed',
+        title: 'Biografías',
         tabBarIcon: ({ color, size }) => (
           <Image
             source={newspaper}
@@ -32,63 +35,77 @@ const HomeTabs = createBottomTabNavigator({
         ),
       },
     },
-    Updates: {
-      screen: Updates,
+    Favorites: {
+      screen: Favorites,
       options: {
-        tabBarIcon: ({ color, size }) => (
-          <Image
-            source={bell}
-            tintColor={color}
-            style={{
-              width: size,
-              height: size,
-            }}
-          />
+        title: 'Favoritos',
+        tabBarIcon: ({ color }) => (
+          <span style={{ fontSize: 24 }}>❤️</span>
+        ),
+      },
+    },
+    Statistics: {
+      screen: Statistics,
+      options: {
+        title: 'Estadísticas',
+        tabBarIcon: ({ color }) => (
+          <span style={{ fontSize: 24 }}>📊</span>
+        ),
+      },
+    },
+    Settings: {
+      screen: Settings,
+      options: {
+        title: 'Ajustes',
+        tabBarIcon: ({ color }) => (
+          <span style={{ fontSize: 24 }}>⚙️</span>
         ),
       },
     },
   },
 });
 
+// Stack principal con navegación a detalles y creación
 const RootStack = createNativeStackNavigator({
   screens: {
     HomeTabs: {
       screen: HomeTabs,
       options: {
-        title: 'Home',
         headerShown: false,
       },
     },
-    Profile: {
-      screen: Profile,
-      linking: {
-        path: ':user(@[a-zA-Z0-9-_]+)',
-        parse: {
-          user: (value) => value.replace(/^@/, ''),
-        },
-        stringify: {
-          user: (value) => `@${value}`,
-        },
-      },
-    },
-    Settings: {
-      screen: Settings,
-      options: ({ navigation }) => ({
-        presentation: 'modal',
-        headerRight: () => (
-          <HeaderButton onPress={navigation.goBack}>
-            <Text>Close</Text>
-          </HeaderButton>
-        ),
-      }),
-    },
-    NotFound: {
-      screen: NotFound,
+    BiographyDetails: {
+      screen: BiographyDetails,
       options: {
-        title: '404',
+        title: 'Biografía',
+        headerStyle: {
+          backgroundColor: '#007AFF',
+        },
+        headerTintColor: '#FFF',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       },
-      linking: {
-        path: '*',
+    },
+    CreateBiography: {
+      screen: CreateBiography,
+      options: {
+        title: 'Nueva Biografía',
+        headerShown: false,
+        presentation: 'modal',
+      },
+    },
+    Help: {
+      screen: Help,
+      options: {
+        title: 'Ayuda',
+        headerStyle: {
+          backgroundColor: '#4CAF50',
+        },
+        headerTintColor: '#FFF',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       },
     },
   },
@@ -96,10 +113,16 @@ const RootStack = createNativeStackNavigator({
 
 export const Navigation = createStaticNavigation(RootStack);
 
+// Tipos para navegación tipada
 type RootStackParamList = StaticParamList<typeof RootStack>;
 
 declare global {
   namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList {}
+    interface RootParamList extends RootStackParamList {
+      HomeTabs: undefined;
+      BiographyDetails: { biographyId: string };
+      CreateBiography: undefined;
+      Help: undefined;
+    }
   }
 }
