@@ -13,7 +13,6 @@ export const useBiographyViewModel = () => {
     sharedViewModel = viewModelRef.current;
   }
 
-  // Estado local para forzar re-renders cuando cambie el ViewModel
   const [, forceUpdate] = useState({});
 
   useEffect(() => {

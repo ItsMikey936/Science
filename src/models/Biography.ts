@@ -1,5 +1,3 @@
-// src/models/Biography.ts
-
 export interface Biography {
   id: string;
   name: string;
