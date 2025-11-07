@@ -2,8 +2,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Biography, CreateBiographyDTO, TimelineEvent } from '../models/Biography';
 
-// ⚠️ IMPORTANTE: Importar la configuración
-// Asegúrate de crear el archivo src/config/supabase.ts primero
 import { SUPABASE_CONFIG } from '../config/supabase';
 
 // Crear cliente de Supabase
